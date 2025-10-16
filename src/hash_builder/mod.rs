@@ -1,13 +1,13 @@
 //! The implementation of the hash builder.
 
 use super::{
-    BranchNodeCompact, EMPTY_ROOT_HASH, Nibbles, TrieMask,
     nodes::{BranchNodeRef, ExtensionNodeRef, LeafNodeRef},
     proof::{ProofNodes, ProofRetainer},
+    BranchNodeCompact, Nibbles, TrieMask, EMPTY_ROOT_HASH,
 };
-use crate::{HashMap, nodes::RlpNode, proof::AddedRemovedKeys};
+use crate::{nodes::RlpNode, proof::AddedRemovedKeys, HashMap};
 use alloc::vec::Vec;
-use alloy_primitives::{B256, keccak256};
+use alloy_primitives::{keccak256, B256};
 use core::cmp;
 use tracing::trace;
 
@@ -159,6 +159,26 @@ impl<K: AsRef<AddedRemovedKeys>> HashBuilder<K> {
         self.set_key_value(key, HashBuilderValueRef::Bytes(value));
     }
 
+    /// Adds a leaf by its and known (already computed) hash to the trie hash builder.
+    /// Safe variant of `add_leaf_hash` that asserts ordering
+    ///
+    /// # Panics
+    ///
+    /// Panics if the new key does not come after the current key.
+    pub fn add_leaf_hash(&mut self, key: Nibbles, leaf_hash: B256) {
+        // If you keep a checked version elsewhere, call it; otherwise reuse the unchecked with your usual ordering checks.
+        self.add_leaf_hash_unchecked(key, leaf_hash);
+    }
+
+    /// Adds a leaf by its and known (already computed) hash to the trie hash builder.
+    pub fn add_leaf_hash_unchecked(&mut self, key: Nibbles, leaf_hash: B256) {
+        debug_assert!(key > self.key, "add_leaf_unchecked key {:?} self.key {:?}", key, self.key);
+        if !self.key.is_empty() {
+            self.update(&key);
+        }
+        self.set_key_value(key, HashBuilderValueRef::Hash(&leaf_hash));
+    }
+
     /// Adds a new branch element and its hash to the trie hash builder.
     pub fn add_branch(&mut self, key: Nibbles, value: B256, stored_in_database: bool) {
         assert!(
@@ -211,7 +231,11 @@ impl<K: AsRef<AddedRemovedKeys>> HashBuilder<K> {
 
     fn current_root(&self) -> B256 {
         if let Some(node_ref) = self.stack.last() {
-            if let Some(hash) = node_ref.as_hash() { hash } else { keccak256(node_ref) }
+            if let Some(hash) = node_ref.as_hash() {
+                hash
+            } else {
+                keccak256(node_ref)
+            }
         } else {
             EMPTY_ROOT_HASH
         }
@@ -485,7 +509,7 @@ mod tests {
     use super::*;
     use crate::{nodes::LeafNode, triehash_trie_root};
     use alloc::collections::BTreeMap;
-    use alloy_primitives::{U256, b256, hex};
+    use alloy_primitives::{b256, hex, U256};
     use alloy_rlp::Encodable;
 
     // Hashes the keys, RLP encodes the values, compares the trie builder with the upstream root.
