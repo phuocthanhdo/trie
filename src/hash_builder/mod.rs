@@ -74,6 +74,24 @@ impl Default for HashBuilder {
     }
 }
 
+impl HashBuilder {
+    /// HashBuilder with HashBuilderValueKind::Hash
+    pub fn new_hash_builder() -> Self {
+        Self {
+            key: Default::default(),
+            value: HashBuilderValue::hash_kind(),
+            stack: Default::default(),
+            state_masks: Default::default(),
+            tree_masks: Default::default(),
+            hash_masks: Default::default(),
+            stored_in_database: Default::default(),
+            updated_branch_nodes: None,
+            proof_retainer: None,
+            rlp_buf: Default::default(),
+        }
+    }
+}
+
 impl<K> HashBuilder<K> {
     /// Enables the Hash Builder to store updated branch nodes.
     ///
@@ -96,22 +114,6 @@ impl<K> HashBuilder<K> {
             updated_branch_nodes: self.updated_branch_nodes,
             proof_retainer: Some(retainer),
             rlp_buf: self.rlp_buf,
-        }
-    }
-
-    /// New HashBuilder with HashBuilderValueKind::Hash
-    pub fn new_hash_builder() -> Self {
-        Self {
-            key: Default::default(),
-            value: HashBuilderValue::hash_kind(),
-            stack: Default::default(),
-            state_masks: Default::default(),
-            tree_masks: Default::default(),
-            hash_masks: Default::default(),
-            stored_in_database: Default::default(),
-            updated_branch_nodes: None,
-            proof_retainer: None,
-            rlp_buf: Default::default(),
         }
     }
 
