@@ -1,5 +1,5 @@
 use alloc::vec::Vec;
-use alloy_primitives::{B256, hex};
+use alloy_primitives::{hex, B256};
 use core::fmt;
 
 /// Hash builder value.
@@ -64,6 +64,11 @@ impl HashBuilderValue {
     /// Creates a new empty value.
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// Creates a new empty value with HashBuilderValueKind
+    pub fn hash_kind() -> Self {
+        Self { buf: Vec::with_capacity(128), kind: HashBuilderValueKind::Hash }
     }
 
     /// Returns the value as a reference.
